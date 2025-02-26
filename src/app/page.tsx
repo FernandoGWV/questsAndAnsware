@@ -15,7 +15,7 @@ interface Answare {
 }
 
 function App() {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(1);
   const [answers, setAnswers] = useState<Answare[]>([]);
   const [result, setResult] = useState<string>("");
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -32,7 +32,6 @@ function App() {
       setIsLoading(true);
       const response = await AIResponse();
       const cleanedResponse = response.replace(/```json|```/g, "").trim();
-
       const jsonData = JSON.parse(cleanedResponse);
       setQuestions(jsonData);
       setIsLoading(false);
@@ -42,14 +41,15 @@ function App() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmitWithData = async (answersData: any) => {
     try {
       setIsLoading(true);
-      const result = await AIResponseFromData(answers as []);
+      const result = await AIResponseFromData(answersData);
       setResult(result);
       setIsLoading(false);
     } catch (error) {
       console.log(error);
+      setIsLoading(false);
     }
   };
 
@@ -57,6 +57,7 @@ function App() {
     const findedAnswer = answers.find(
       (item: any) => item.id === questions[currentStep].id
     );
+
     if (!findedAnswer) {
       const newAnswers = [
         ...answers,
@@ -66,13 +67,18 @@ function App() {
           answare: option,
         },
       ];
-      setAnswers(newAnswers as []);
-    }
 
-    if (currentStep < questions.length - 1) {
-      setCurrentStep(currentStep + 1);
+      setAnswers(newAnswers as []);
+
+      if (currentStep < questions.length - 1) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        handleSubmitWithData(newAnswers);
+      }
     } else {
-      handleSubmit();
+      if (currentStep < questions.length - 1) {
+        setCurrentStep(currentStep + 1);
+      }
     }
   };
 
@@ -82,6 +88,7 @@ function App() {
     setResult("");
     setQuestions([]);
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
@@ -132,9 +139,8 @@ function App() {
                     <div
                       className="bg-purple-600 h-2 rounded-full transition-all duration-300"
                       style={{
-                        width: `${
-                          ((currentStep + 1) / questions.length) * 100
-                        }%`,
+                        width: `${((currentStep + 1) / questions.length) * 100
+                          }%`,
                       }}
                     ></div>
                   </div>
